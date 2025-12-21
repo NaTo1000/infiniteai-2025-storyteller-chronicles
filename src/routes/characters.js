@@ -78,6 +78,9 @@ router.delete('/:id', async (req, res, next) => {
 router.get('/:id/relationships', async (req, res, next) => {
   try {
     const relationships = await characterService.getRelationships(req.params.id);
+    if (!relationships) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
     res.json(relationships);
   } catch (error) {
     next(error);
