@@ -97,8 +97,8 @@ export class AIService {
   async analyzeStyle(text) {
     const words = text.split(/\s+/).filter(w => w.length > 0);
     const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const avgWordLength = words.reduce((sum, word) => sum + word.length, 0) / words.length;
-    const avgSentenceLength = words.length / sentences.length;
+    const avgWordLength = words.length > 0 ? words.reduce((sum, word) => sum + word.length, 0) / words.length : 0;
+    const avgSentenceLength = sentences.length > 0 ? words.length / sentences.length : 0;
 
     let readabilityLevel = 'medium';
     if (avgSentenceLength < 15 && avgWordLength < 5) readabilityLevel = 'easy';

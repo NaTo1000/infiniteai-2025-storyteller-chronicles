@@ -93,7 +93,7 @@ export class StoryService {
     if (!story) return null;
 
     const content = story.content || '';
-    const words = content.split(/\s+/).filter(word => word.length > 0);
+    const wordCount = this.countWords(content);
     const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
     const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 0);
 
@@ -101,12 +101,12 @@ export class StoryService {
       storyId: id,
       title: story.title,
       statistics: {
-        wordCount: words.length,
+        wordCount,
         characterCount: content.length,
         sentenceCount: sentences.length,
         paragraphCount: paragraphs.length,
-        averageWordsPerSentence: sentences.length > 0 ? Math.round(words.length / sentences.length) : 0,
-        estimatedReadingTime: Math.ceil(words.length / 200) // Assuming 200 words per minute
+        averageWordsPerSentence: sentences.length > 0 ? Math.round(wordCount / sentences.length) : 0,
+        estimatedReadingTime: Math.ceil(wordCount / 200) // Assuming 200 words per minute
       },
       metadata: {
         genre: story.genre,
