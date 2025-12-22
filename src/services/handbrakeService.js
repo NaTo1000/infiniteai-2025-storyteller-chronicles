@@ -40,9 +40,15 @@ export class HandbrakeService {
       }
 
       // Find SHA256 file
+      // SHA256 files can have various naming patterns:
+      // - Same name as installer with .sha256 suffix
+      // - Separate checksums file containing all hashes
       const sha256Asset = release.assets.find(asset => 
-        asset.name.includes(windowsAsset.name) && 
-        asset.name.endsWith('.sha256')
+        (asset.name.toLowerCase().endsWith('.sha256') || 
+         asset.name.toLowerCase().includes('sha256') ||
+         asset.name.toLowerCase().includes('checksum')) &&
+        (asset.name.includes('Win') || asset.name.includes('windows') || 
+         asset.name.toLowerCase().includes('sha256sum'))
       );
 
       return {
@@ -72,7 +78,7 @@ export class HandbrakeService {
   /**
    * Download SHA256 checksum from GitHub
    */
-  async downloadSHA256(sha256Asset) {
+  async downloadSHA256(sha256Asset, installerName) {
     try {
       const response = await axios.get(sha256Asset.downloadUrl, {
         responseType: 'text'
@@ -80,15 +86,29 @@ export class HandbrakeService {
 
       // SHA256 files typically contain the hash followed by the filename
       // Format: <hash> <filename>
+      // Files may contain multiple entries (one per line)
       const content = response.data.trim();
-      const match = content.match(/^([a-fA-F0-9]{64})\s+(.*)$/);
+      const lines = content.split('\n');
       
-      if (match) {
-        return match[1].toLowerCase();
+      // Try to find the hash for our specific installer
+      for (const line of lines) {
+        const match = line.trim().match(/^([a-f0-9]{64})\s+(.*)$/i);
+        if (match) {
+          const [, hash, filename] = match;
+          // Check if this line is for our installer
+          if (filename.includes(installerName) || lines.length === 1) {
+            return hash.toLowerCase();
+          }
+        }
+      }
+      
+      // If no match found with filename, try to find any 64-char hex string
+      const hashMatch = content.match(/([a-f0-9]{64})/i);
+      if (hashMatch) {
+        return hashMatch[1].toLowerCase();
       }
 
-      // If no match, assume the entire content is the hash
-      return content.toLowerCase();
+      throw new Error('Could not parse SHA256 hash from checksum file');
     } catch (error) {
       throw new Error(`Failed to download SHA256 checksum: ${error.message}`);
     }
@@ -180,7 +200,7 @@ export class HandbrakeService {
       let sha256 = null;
       if (releaseInfo.sha256) {
         try {
-          sha256 = await this.downloadSHA256(releaseInfo.sha256);
+          sha256 = await this.downloadSHA256(releaseInfo.sha256, releaseInfo.installer.name);
         } catch (error) {
           console.warn('Could not retrieve SHA256 checksum:', error.message);
         }
