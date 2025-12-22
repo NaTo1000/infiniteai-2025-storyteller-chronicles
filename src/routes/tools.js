@@ -4,6 +4,10 @@ import { HandbrakeService } from '../services/handbrakeService.js';
 const router = express.Router();
 const handbrakeService = new HandbrakeService();
 
+// NOTE: Production deployments should implement rate limiting on these endpoints
+// to prevent abuse and excessive API calls to GitHub.
+// Consider using express-rate-limit or similar middleware.
+
 /**
  * GET /api/tools/handbrake/latest
  * Get latest HandBrake version information without downloading

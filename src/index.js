@@ -41,6 +41,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Welcome endpoint
+// Serves static public HTML file - no rate limiting needed for public welcome page
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, '../public/index.html'));
 });
