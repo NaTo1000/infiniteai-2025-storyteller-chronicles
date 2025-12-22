@@ -167,8 +167,9 @@ export class HandbrakeService {
         method: 'get',
         url: downloadUrl,
         responseType: 'stream',
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
+        // Set reasonable limits for HandBrake installer size (max 500MB)
+        maxContentLength: 500 * 1024 * 1024,
+        maxBodyLength: 500 * 1024 * 1024
       });
 
       response.data.pipe(writer);
@@ -181,7 +182,9 @@ export class HandbrakeService {
       // Clean up partial download
       try {
         await fs.unlink(filePath);
-      } catch {}
+      } catch (cleanupError) {
+        // Ignore cleanup errors - file may not have been created
+      }
       throw new Error(`Failed to download HandBrake installer: ${error.message}`);
     }
   }
@@ -202,7 +205,8 @@ export class HandbrakeService {
         try {
           sha256 = await this.downloadSHA256(releaseInfo.sha256, releaseInfo.installer.name);
         } catch (error) {
-          console.warn('Could not retrieve SHA256 checksum:', error.message);
+          // Log warning but continue - SHA256 verification is optional but recommended
+          console.error('Warning: Could not retrieve SHA256 checksum:', error.message);
         }
       }
 
